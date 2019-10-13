@@ -62,6 +62,7 @@ bool alarmTriggered=false; // Initial state
 int sampleInterval[3]={1,2,5};
 int start=0;
 
+
 /*
  * startStop
  * Start or stop montering
@@ -181,8 +182,7 @@ void *sample_sensors(void *threadargs){
         //Conversions
         float dac_output = light/(float)1023 * humidity;
         float environmental_temperature= ((temperature*3.3/1024)-V_0)/Tc;
-        //float environmental_temperature = temperature;
-
+        
         //printf("Min since last activation %d Hours since last activation %d\n",getAlarmMinutes(),getAlarmHours()); //Test
         
         //Calculates dac output and triggers alarm if within thresh hold
@@ -198,7 +198,9 @@ void *sample_sensors(void *threadargs){
         if (alarmActive){
             alarm = '*';
         } 
-        else alarm = ' ';
+        else {
+            alarm = ' ';
+        }
 
         char buffer [80];
         int n=sprintf (buffer,"%02d:%02d:%02d\t%02d:%02d:%02d\t%1.2f V\t\t%2.2f C\t%4d\t%1.2fV\t%c",hours, mins, secs,getSystemRunHours(), getSystemRunMin(), getSystemRunSec(),humidity,environmental_temperature,light,dac_output,alarm);
@@ -211,6 +213,9 @@ void *sample_sensors(void *threadargs){
         Blynk.virtualWrite(1,environmental_temperature);
         Blynk.virtualWrite(2,humidity);
         Blynk.virtualWrite(4,light);
+
+        dac_output=(int)(dac_output/3.3*1024);
+        setVoltage(dac_output);
         
 
         fflush(stdout); // Make sure printf works
@@ -433,6 +438,7 @@ void setup()
 {
     Blynk.begin(auth, serv, port);
 
+    wiringPiSPISetup(SPI_CHAN_DAC,SPI_SPEED); //Init DAC
     mcp3004Setup (BASE, SPI_CHAN_ADC) ; // Init ADC
     RTC = wiringPiI2CSetup(RTCAddr); //Set up the RTC
     softToneCreate(BUZZER); //Init BUZZER pin
@@ -485,6 +491,8 @@ int main(int argc, char* argv[])
     parse_options(argc, argv, auth, serv, port);
 
     setup();
+    sleep(2);
+    led1.off();
     while(true) {
         loop();
     }

@@ -213,7 +213,7 @@ int sampleVoltage(void){
 int setVoltage(int voltage){
     //Set control and data bits
     unsigned char dacBuffer[2];
-    dacBuffer[0]=48 | (voltage>>6);
+    dacBuffer[0]=48 | (voltage>>4);
     dacBuffer[1]=252 & (voltage<<2);
     //Send buffer
     return wiringPiSPIDataRW (SPI_CHAN_DAC, dacBuffer, 2);
